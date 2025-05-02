@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to TaskFlow{% endblock %}
+
+{% block content %}
+<div class="bg-gradient-to-r from-primary-600 to-indigo-600 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div class="lg:grid lg:grid-cols-2 lg:gap-8 items-center">
+            <div>
+                <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+                    Organize your life with TaskFlow
+                </h1>
+                <p class="mt-6 text-xl max-w-3xl">
+                    TaskFlow helps you stay organized and on top of your tasks. Create to-do lists, set due dates, and never forget an important task again.
+                </p>
+                <div class="mt-10 flex space-x-4">
+                    <a href="{% url 'core:register' %}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-primary-700 bg-white hover:bg-gray-50">
+                        Get Started
+                    </a>
+                    <a href="{% url 'core:login' %}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-800 bg-opacity-60 hover:bg-opacity-70">
+                        Sign In
+                    </a>
+                </div>
+            </div>
+            <div class="mt-12 lg:mt-0">
+                <div class="pl-4 sm:pl-6 lg:pl-0">
+                    <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+                        <img src="https://placehold.co/600x400/0064ff/FFFFFF/png?text=TaskFlow&font=montserrat" alt="TaskFlow Demo" class="w-full">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="py-12 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="lg:text-center">
+            <h2 class="text-base text-primary-600 font-semibold tracking-wide uppercase">Features</h2>
+            <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                A better way to manage your tasks
+            </p>
+            <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                Everything you need to stay organized and productive.
+            </p>
+        </div>
+
+        <div class="mt-10">
+            <div class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
+                <div class="relative">
+                    <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Multiple To-Do Lists</p>
+                    <p class="mt-2 ml-16 text-base text-gray-500">
+                        Create separate lists for different aspects of your life like work, home, and personal projects.
+                    </p>
+                </div>
+
+                <div class="relative">
+                    <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Task Categorization</p>
+                    <p class="mt-2 ml-16 text-base text-gray-500">
+                        Organize your tasks with custom tags and easily filter tasks by category.
+                    </p>
+                </div>
+
+                <div class="relative">
+                    <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Due Dates & Reminders</p>
+                    <p class="mt-2 ml-16 text-base text-gray-500">
+                        Set due dates for your tasks and get notified of upcoming and overdue tasks.
+                    </p>
+                </div>
+
+                <div class="relative">
+                    <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Productivity Tracking</p>
+                    <p class="mt-2 ml-16 text-base text-gray-500">
+                        Monitor your progress with visual indicators and statistics on your completed tasks.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-gray-50 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                Ready to get started?
+            </h2>
+            <p class="mt-4 text-lg text-gray-500">
+                Sign up for free and begin organizing your tasks today.
+            </p>
+            <div class="mt-8 flex justify-center">
+                <div class="rounded-md shadow">
+                    <a href="{% url 'core:register' %}" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 md:py-4 md:text-lg md:px-10">
+                        Get Started
+                    </a>
+                </div>
+                <div class="ml-3 inline-flex rounded-md shadow">
+                    <a href="{% url 'core:login' %}" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">
+                        Sign In
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

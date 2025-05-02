@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - TaskFlow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Welcome Header -->
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Welcome back, {{ user.username }}!</h1>
+        <p class="text-gray-500 mt-1">Here's an overview of your tasks and productivity.</p>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-primary-100 text-primary-600">
+                    <i class="fas fa-tasks fa-fw"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Total Tasks</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ total_tasks }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-check fa-fw"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Completed</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ completed_tasks }}</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ completion_rate }}%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">{{ completion_rate|floatformat:1 }}% completion rate</p>
+            </div>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
+                    <i class="fas fa-spinner fa-fw"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">In Progress</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ incomplete_tasks }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-red-100 text-red-600">
+                    <i class="fas fa-exclamation-circle fa-fw"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Overdue</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ overdue_tasks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left column -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Upcoming Tasks Section -->
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-lg font-medium text-gray-900">Upcoming Tasks</h2>
+                    <a href="{% url 'tasks:filter_week' %}" class="text-sm text-primary-600 hover:text-primary-500">View all</a>
+                </div>
+                <div class="p-6">
+                    {% if upcoming_tasks %}
+                        <ul class="divide-y divide-gray-200">
+                            {% for task in upcoming_tasks %}
+                                <li class="py-4 flex items-center">
+                                    <div class="mr-4">
+                                        <form action="{% url 'tasks:toggle_task_complete' pk=task.pk %}" method="post" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="w-5 h-5 border-2 rounded-full flex items-center justify-center {% if task.is_completed %}bg-primary-600 border-primary-600{% else %}border-gray-300 hover:border-primary-500{% endif %}">
+                                                {% if task.is_completed %}
+                                                    <i class="fas fa-check text-white text-xs"></i>
+                                                {% endif %}
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <a href="{% url 'tasks:task_detail' pk=task.pk %}" class="text-sm font-medium text-gray-900 hover:text-primary-600">
+                                            {{ task.title }}
+                                        </a>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            {{ task.due_date|date:"M j, g:i A" }} • {{ task.todo_list.title }}
+                                        </p>
+                                    </div>
+                                    <div class="ml-4 flex-shrink-0">
+                                        {% if task.priority == 'high' %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                High
+                                            </span>
+                                        {% elif task.priority == 'medium' %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                Medium
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Low
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-primary-100">
+                                <i class="fas fa-calendar-check text-primary-600"></i>
+                            </div>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No upcoming tasks</h3>
+                            <p class="mt-1 text-sm text-gray-500">Create a new task to get started.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Recent Activity Section -->
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Recent Activity</h2>
+                </div>
+                <div class="p-6">
+                    {% if recent_tasks %}
+                        <ul class="divide-y divide-gray-200">
+                            {% for task in recent_tasks %}
+                                <li class="py-4">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex-shrink-0">
+                                            <div class="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
+                                                {% if task.is_completed %}
+                                                    <i class="fas fa-check text-primary-600"></i>
+                                                {% else %}
+                                                    <i class="fas fa-plus text-primary-600"></i>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-900">
+                                                {% if task.is_completed %}
+                                                    Completed: {{ task.title }}
+                                                {% else %}
+                                                    Added: {{ task.title }}
+                                                {% endif %}
+                                            </p>
+                                            <p class="text-sm text-gray-500 truncate">
+                                                {{ task.created_at|date:"M j, g:i A" }} • {{ task.todo_list.title }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-primary-100">
+                                <i class="fas fa-history text-primary-600"></i>
+                            </div>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No recent activity</h3>
+                            <p class="mt-1 text-sm text-gray-500">Your recent task activity will appear here.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right column -->
+        <div class="space-y-6">
+            <!-- Quick Access Section -->
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Quick Access</h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <a href="{% url 'tasks:create_todo_list' %}" class="group flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-primary-50 hover:border-primary-200">
+                            <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center group-hover:bg-primary-200">
+                                <i class="fas fa-plus text-primary-600"></i>
+                            </div>
+                            <p class="mt-2 text-sm font-medium text-gray-900 group-hover:text-primary-700">New List</p>
+                        </a>
+                        <a href="{% url 'tasks:filter_today' %}" class="group flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200">
+                            <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200">
+                                <i class="fas fa-calendar-day text-blue-600"></i>
+                            </div>
+                            <p class="mt-2 text-sm font-medium text-gray-900 group-hover:text-blue-700">Today</p>
+                        </a>
+                        <a href="{% url 'tasks:filter_overdue' %}" class="group flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-red-50 hover:border-red-200">
+                            <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center group-hover:bg-red-200">
+                                <i class="fas fa-exclamation-triangle text-red-600"></i>
+                            </div>
+                            <p class="mt-2 text-sm font-medium text-gray-900 group-hover:text-red-700">Overdue</p>
+                        </a>
+                        <a href="{% url 'tasks:create_tag' %}" class="group flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-200">
+                            <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center group-hover:bg-purple-200">
+                                <i class="fas fa-tag text-purple-600"></i>
+                            </div>
+                            <p class="mt-2 text-sm font-medium text-gray-900 group-hover:text-purple-700">New Tag</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Todo Lists Section -->
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-lg font-medium text-gray-900">Your Lists</h2>
+                    <a href="{% url 'tasks:list_todo_lists' %}" class="text-sm text-primary-600 hover:text-primary-500">View all</a>
+                </div>
+                <div class="p-6">
+                    {% if todo_lists %}
+                        <ul class="divide-y divide-gray-200">
+                            {% for list in todo_lists|slice:":5" %}
+                                <li class="py-3">
+                                    <a href="{% url 'tasks:todo_list_detail' pk=list.pk %}" class="block hover:bg-gray-50">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 truncate">
+                                                    {{ list.title }}
+                                                </p>
+                                                <p class="text-xs text-gray-500">
+                                                    {{ list.get_incomplete_tasks_count }} pending, 
+                                                    {{ list.get_completed_tasks_count }} completed
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <i class="fas fa-chevron-right text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-primary-100">
+                                <i class="fas fa-list text-primary-600"></i>
+                            </div>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No lists yet</h3>
+                            <p class="mt-1 text-sm text-gray-500">Get started by creating a new list.</p>
+                            <div class="mt-6">
+                                <a href="{% url 'tasks:create_todo_list' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700">
+                                    <i class="fas fa-plus mr-2"></i> Create List
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
