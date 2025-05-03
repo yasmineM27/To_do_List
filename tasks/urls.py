@@ -14,6 +14,19 @@ urlpatterns = [
     path('lists/<int:pk>/edit/', views.edit_todo_list, name='edit_todo_list'),
     path('lists/<int:pk>/delete/', views.delete_todo_list, name='delete_todo_list'),
     
+    # Kanban Board
+    path('lists/<int:pk>/kanban/', views.kanban_board, name='kanban_board'),
+    path('tasks/update-status/', views.update_task_status, name='update_task_status'),
+    
+    # Collaboration
+    path('lists/<int:pk>/share/', views.share_todo_list, name='share_todo_list'),
+    path('lists/<int:list_pk>/remove-collaborator/<int:user_pk>/', views.remove_collaborator, name='remove_collaborator'),
+    path('invitations/', views.invitations, name='invitations'),
+    path('invitations/<int:invitation_id>/respond/', views.respond_to_invitation, name='respond_to_invitation'),
+    
+    # Calendar Integration
+    path('lists/<int:pk>/export-calendar/', views.export_calendar, name='export_calendar'),
+    
     # Tasks
     path('lists/<int:list_pk>/tasks/create/', views.create_task, name='create_task'),
     path('tasks/<uuid:pk>/', views.task_detail, name='task_detail'),
@@ -33,4 +46,9 @@ urlpatterns = [
     path('tasks/filter/overdue/', views.filter_overdue, name='filter_overdue'),
     path('tasks/filter/today/', views.filter_today, name='filter_today'),
     path('tasks/filter/week/', views.filter_week, name='filter_week'),
+    # Collaboration
+path('lists/<int:pk>/share/', views.share_todo_list, name='share_todo_list'),
+path('lists/<int:list_pk>/remove-collaborator/<int:user_pk>/', views.remove_collaborator, name='remove_collaborator'),
+path('invitations/', views.invitations, name='invitations'),
+path('invitations/<int:invitation_id>/respond/', views.respond_to_invitation, name='respond_to_invitation'),
 ]

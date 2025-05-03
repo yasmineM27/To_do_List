@@ -1,5 +1,6 @@
 from django import forms
-from .models import ToDoList, Task, Tag
+from django.contrib.auth.models import User
+from .models import ToDoList, Task, Tag, Invitation
 
 class ToDoListForm(forms.ModelForm):
     class Meta:
@@ -15,9 +16,10 @@ class TaskForm(forms.ModelForm):
     
     class Meta:
         model = Task
-        fields = ['title', 'description', 'due_date', 'priority', 'tags']
+        fields = ['title', 'description', 'due_date', 'priority', 'status', 'tags']
         widgets = {
             'tags': forms.CheckboxSelectMultiple(),
+            'status': forms.Select(attrs={'class': 'form-select'}),
         }
     
     def __init__(self, user, *args, **kwargs):
@@ -41,3 +43,26 @@ class TagForm(forms.ModelForm):
     class Meta:
         model = Tag
         fields = ['name', 'color']
+
+# New forms for collaboration features
+class ShareListForm(forms.Form):
+    email = forms.EmailField(label="User's Email")
+    
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        try:
+            User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise forms.ValidationError("No user with this email exists in the system.")
+        return email
+
+class InvitationResponseForm(forms.ModelForm):
+    class Meta:
+        model = Invitation
+        fields = ['status']
+        widgets = {
+            'status': forms.RadioSelect(choices=[
+                ('accepted', 'Accept'),
+                ('declined', 'Decline'),
+            ])
+        }

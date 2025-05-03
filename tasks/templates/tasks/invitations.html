@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Invitations - TaskFlow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Pending Invitations</h1>
+        <a href="{% url 'tasks:dashboard' %}"
+            class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
+            <i class="fas fa-arrow-left mr-1.5"></i> Back to Dashboard
+        </a>
+    </div>
+
+    {% if pending_invitations %}
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <ul class="divide-y divide-gray-200">
+            {% for invitation in pending_invitations %}
+            <li class="p-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h2 class="text-lg font-medium text-gray-900">{{ invitation.todo_list.title }}</h2>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Invited by {{ invitation.invited_by.username }} on {{ invitation.created_at|date:"F j, Y" }}
+                        </p>
+                    </div>
+                    <div class="mt-4 md:mt-0 flex space-x-3">
+                        <form method="post"
+                            action="{% url 'tasks:respond_to_invitation' invitation_id=invitation.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="accepted">
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700">
+                                <i class="fas fa-check mr-1.5"></i> Accept
+                            </button>
+                        </form>
+                        <form method="post"
+                            action="{% url 'tasks:respond_to_invitation' invitation_id=invitation.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="declined">
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                <i class="fas fa-times mr-1.5"></i> Decline
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="text-center py-16 px-4 sm:px-6 lg:px-8">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-primary-100">
+                <i class="fas fa-envelope-open text-primary-600 text-xl"></i>
+            </div>
+            <h3 class="mt-3 text-lg font-medium text-gray-900">No pending invitations</h3>
+            <p class="mt-1 text-sm text-gray-500">You don't have any pending invitations to collaborate on todo lists.
+            </p>
+            <div class="mt-6">
+                <a href="{% url 'tasks:dashboard' %}"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Share {{ todo_list.title }} - TaskFlow{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-5 border-b border-gray-200">
+            <h1 class="text-lg font-medium text-gray-900">Share "{{ todo_list.title }}"</h1>
+            <p class="mt-1 text-sm text-gray-500">
+                Invite others to collaborate on this todo list.
+            </p>
+        </div>
+        <div class="px-6 py-5">
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="mt-6 flex items-center justify-end">
+                    <a href="{% url 'tasks:todo_list_detail' pk=todo_list.pk %}"
+                        class="mr-4 text-sm font-medium text-gray-700 hover:text-gray-500">
+                        Cancel
+                    </a>
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-paper-plane mr-2"></i> Send Invitation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if collaborators %}
+    <div class="mt-8 bg-white shadow rounded-lg">
+        <div class="px-6 py-5 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Current Collaborators</h2>
+        </div>
+        <ul class="divide-y divide-gray-200">
+            {% for collaborator in collaborators %}
+            <li class="px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div
+                            class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
+                            {{ collaborator.username|first|upper }}
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900">{{ collaborator.username }}</p>
+                        <p class="text-sm text-gray-500">{{ collaborator.email }}</p>
+                    </div>
+                </div>
+                <form method="post"
+                    action="{% url 'tasks:remove_collaborator' list_pk=todo_list.pk user_pk=collaborator.pk %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200">
+                        <i class="fas fa-user-minus mr-1.5"></i> Remove
+                    </button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if todo_list.share_code %}
+    <div class="mt-8 bg-white shadow rounded-lg">
+        <div class="px-6 py-5 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Share Code</h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Share this code with others to let them join this list.
+            </p>
+        </div>
+        <div class="px-6 py-5">
+            <div class="flex items-center">
+                <div class="bg-gray-100 px-4 py-2 rounded-md font-mono text-lg">
+                    {{ todo_list.share_code }}
+                </div>
+                <button id="copy-code"
+                    class="ml-4 inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
+                    <i class="fas fa-copy mr-1.5"></i> Copy
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const copyButton = document.getElementById('copy-code');
+        if (copyButton) {
+            copyButton.addEventListener('click', function () {
+                const code = '{{ todo_list.share_code }}';
+                navigator.clipboard.writeText(code).then(function () {
+                    copyButton.innerHTML = '<i class="fas fa-check mr-1.5"></i> Copied!';
+                    setTimeout(function () {
+                        copyButton.innerHTML = '<i class="fas fa-copy mr-1.5"></i> Copy';
+                    }, 2000);
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

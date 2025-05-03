@@ -1,0 +1,415 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ todo_list.title }} - Kanban Board - TaskFlow{% endblock %}
+
+{% block extra_head %}
+<style>
+    .kanban-column {
+        min-height: 500px;
+    }
+
+    .task-card {
+        cursor: grab;
+    }
+
+    .task-card:active {
+        cursor: grabbing;
+    }
+
+    .task-card.dragging {
+        opacity: 0.5;
+    }
+
+    .column-drop-zone {
+        min-height: 100px;
+        transition: background-color 0.2s ease;
+    }
+
+    .column-drop-zone.drag-over {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+
+    .task-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .task-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ todo_list.title }}</h1>
+            <div class="flex items-center mt-1">
+                <span class="text-sm text-gray-500">
+                    Created by {{ todo_list.user.username }}
+                </span>
+                {% if todo_list.is_shared %}
+                <span
+                    class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <i class="fas fa-users mr-1"></i> Shared
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="mt-4 md:mt-0 flex flex-wrap gap-2">
+            <a href="{% url 'tasks:todo_list_detail' pk=todo_list.pk %}"
+                class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
+                <i class="fas fa-list mr-1.5"></i> List View
+            </a>
+            {% if is_owner %}
+            <a href="{% url 'tasks:share_todo_list' pk=todo_list.pk %}"
+                class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
+                <i class="fas fa-share-alt mr-1.5"></i> Share
+            </a>
+            {% endif %}
+            <a href="{% url 'tasks:export_calendar' pk=todo_list.pk %}"
+                class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
+                <i class="fas fa-calendar-alt mr-1.5"></i> Export Calendar
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- To Do Column -->
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-medium text-gray-900 flex items-center">
+                    <i class="fas fa-clipboard-list text-gray-500 mr-2"></i> To Do
+                    <span
+                        class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-medium rounded-full bg-gray-200 text-gray-800">
+                        {{ tasks_by_status.todo|length }}
+                    </span>
+                </h2>
+                <a href="{% url 'tasks:create_task' list_pk=todo_list.pk %}?status=todo&from_kanban=1"
+                    class="text-primary-600 hover:text-primary-700">
+                    <i class="fas fa-plus"></i>
+                </a>
+            </div>
+            <div class="p-4 kanban-column column-drop-zone" data-status="todo">
+                {% for task in tasks_by_status.todo %}
+                <div class="task-card mb-3 p-4 bg-white border border-gray-200 rounded-lg shadow-sm"
+                    data-task-id="{{ task.id }}" data-status="todo" draggable="true">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-sm font-medium text-gray-900">{{ task.title }}</h3>
+                        <div class="flex space-x-1">
+                            <a href="{% url 'tasks:edit_task' pk=task.pk %}" class="text-gray-400 hover:text-gray-500">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% if task.description %}
+                    <p class="mt-1 text-xs text-gray-500 line-clamp-2">{{ task.description|truncatechars:100 }}</p>
+                    {% endif %}
+                    <div class="mt-2 flex items-center flex-wrap gap-1">
+                        {% if task.due_date %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {% if task.is_overdue %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                            <i class="fas fa-clock mr-1"></i>
+                            {{ task.due_date|date:"M j" }}
+                        </span>
+                        {% endif %}
+
+                        {% if task.priority == 'high' %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                            <i class="fas fa-exclamation-circle mr-1"></i> High
+                        </span>
+                        {% elif task.priority == 'medium' %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <i class="fas fa-exclamation mr-1"></i> Medium
+                        </span>
+                        {% endif %}
+
+                        {% for tag in task.tags.all %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium{% if tag.color == 'blue' %} bg-blue-100 text-blue-800{% elif tag.color == 'red' %} bg-red-100 text-red-800{% elif tag.color == 'green' %} bg-green-100 text-green-800{% elif tag.color == 'yellow' %} bg-yellow-100 text-yellow-800{% elif tag.color == 'purple' %} bg-purple-100 text-purple-800{% elif tag.color == 'pink' %} bg-pink-100 text-pink-800{% elif tag.color == 'orange' %} bg-orange-100 text-orange-800{% else %} bg-gray-100 text-gray-800{% endif %}">
+                            <i class="fas fa-tag mr-1"></i> {{ tag.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-clipboard-list text-gray-300 text-4xl mb-2"></i>
+                    <p class="text-sm">No tasks to do</p>
+                    <a href="{% url 'tasks:create_task' list_pk=todo_list.pk %}?status=todo&from_kanban=1"
+                        class="mt-2 inline-block text-xs text-primary-600 hover:text-primary-700">
+                        Add a task
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- In Progress Column -->
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-6 py-4 bg-blue-50 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-medium text-gray-900 flex items-center">
+                    <i class="fas fa-spinner text-blue-500 mr-2"></i> In Progress
+                    <span
+                        class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-medium rounded-full bg-blue-200 text-blue-800">
+                        {{ tasks_by_status.in_progress|length }}
+                    </span>
+                </h2>
+                <a href="{% url 'tasks:create_task' list_pk=todo_list.pk %}?status=in_progress&from_kanban=1"
+                    class="text-primary-600 hover:text-primary-700">
+                    <i class="fas fa-plus"></i>
+                </a>
+            </div>
+            <div class="p-4 kanban-column column-drop-zone" data-status="in_progress">
+                {% for task in tasks_by_status.in_progress %}
+                <div class="task-card mb-3 p-4 bg-white border border-gray-200 rounded-lg shadow-sm"
+                    data-task-id="{{ task.id }}" data-status="in_progress" draggable="true">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-sm font-medium text-gray-900">{{ task.title }}</h3>
+                        <div class="flex space-x-1">
+                            <a href="{% url 'tasks:edit_task' pk=task.pk %}" class="text-gray-400 hover:text-gray-500">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% if task.description %}
+                    <p class="mt-1 text-xs text-gray-500 line-clamp-2">{{ task.description|truncatechars:100 }}</p>
+                    {% endif %}
+                    <div class="mt-2 flex items-center flex-wrap gap-1">
+                        {% if task.due_date %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {% if task.is_overdue %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                            <i class="fas fa-clock mr-1"></i>
+                            {{ task.due_date|date:"M j" }}
+                        </span>
+                        {% endif %}
+
+                        {% if task.priority == 'high' %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                            <i class="fas fa-exclamation-circle mr-1"></i> High
+                        </span>
+                        {% elif task.priority == 'medium' %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <i class="fas fa-exclamation mr-1"></i> Medium
+                        </span>
+                        {% endif %}
+
+                        {% for tag in task.tags.all %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium{% if tag.color == 'blue' %} bg-blue-100 text-blue-800{% elif tag.color == 'red' %} bg-red-100 text-red-800{% elif tag.color == 'green' %} bg-green-100 text-green-800{% elif tag.color == 'yellow' %} bg-yellow-100 text-yellow-800{% elif tag.color == 'purple' %} bg-purple-100 text-purple-800{% elif tag.color == 'pink' %} bg-pink-100 text-pink-800{% elif tag.color == 'orange' %} bg-orange-100 text-orange-800{% else %} bg-gray-100 text-gray-800{% endif %}">
+                            <i class="fas fa-tag mr-1"></i> {{ tag.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-spinner text-gray-300 text-4xl mb-2"></i>
+                    <p class="text-sm">No tasks in progress</p>
+                    <a href="{% url 'tasks:create_task' list_pk=todo_list.pk %}?status=in_progress&from_kanban=1"
+                        class="mt-2 inline-block text-xs text-primary-600 hover:text-primary-700">
+                        Add a task
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Done Column -->
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-6 py-4 bg-green-50 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-medium text-gray-900 flex items-center">
+                    <i class="fas fa-check-circle text-green-500 mr-2"></i> Done
+                    <span
+                        class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-medium rounded-full bg-green-200 text-green-800">
+                        {{ tasks_by_status.done|length }}
+                    </span>
+                </h2>
+                <a href="{% url 'tasks:create_task' list_pk=todo_list.pk %}?status=done&from_kanban=1"
+                    class="text-primary-600 hover:text-primary-700">
+                    <i class="fas fa-plus"></i>
+                </a>
+            </div>
+            <div class="p-4 kanban-column column-drop-zone" data-status="done">
+                {% for task in tasks_by_status.done %}
+                <div class="task-card mb-3 p-4 bg-white border border-gray-200 rounded-lg shadow-sm opacity-75"
+                    data-task-id="{{ task.id }}" data-status="done" draggable="true">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-sm font-medium text-gray-500 line-through">{{ task.title }}</h3>
+                        <div class="flex space-x-1">
+                            <a href="{% url 'tasks:edit_task' pk=task.pk %}" class="text-gray-400 hover:text-gray-500">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% if task.description %}
+                    <p class="mt-1 text-xs text-gray-400 line-clamp-2 line-through">{{
+                        task.description|truncatechars:100 }}</p>
+                    {% endif %}
+                    <div class="mt-2 flex items-center flex-wrap gap-1">
+                        {% if task.completed_at %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check mr-1"></i>
+                            {{ task.completed_at|date:"M j" }}
+                        </span>
+                        {% endif %}
+
+                        {% for tag in task.tags.all %}
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium opacity-75{% if tag.color == 'blue' %} bg-blue-100 text-blue-800{% elif tag.color == 'red' %} bg-red-100 text-red-800{% elif tag.color == 'green' %} bg-green-100 text-green-800{% elif tag.color == 'yellow' %} bg-yellow-100 text-yellow-800{% elif tag.color == 'purple' %} bg-purple-100 text-purple-800{% elif tag.color == 'pink' %} bg-pink-100 text-pink-800{% elif tag.color == 'orange' %} bg-orange-100 text-orange-800{% else %} bg-gray-100 text-gray-800{% endif %}">
+                            <i class="fas fa-tag mr-1"></i> {{ tag.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-check-circle text-gray-300 text-4xl mb-2"></i>
+                    <p class="text-sm">No completed tasks</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const taskCards = document.querySelectorAll('.task-card');
+        const dropZones = document.querySelectorAll('.column-drop-zone');
+        let draggedTask = null;
+
+        // Add drag event listeners to task cards
+        taskCards.forEach(card => {
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+        });
+
+        // Add drop event listeners to columns
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', handleDragOver);
+            zone.addEventListener('dragenter', handleDragEnter);
+            zone.addEventListener('dragleave', handleDragLeave);
+            zone.addEventListener('drop', handleDrop);
+        });
+
+        function handleDragStart(e) {
+            draggedTask = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.taskId);
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            dropZones.forEach(zone => zone.classList.remove('drag-over'));
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            this.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+
+            // Don't do anything if dropping the same column
+            const sourceStatus = draggedTask.dataset.status;
+            const targetStatus = this.dataset.status;
+
+            if (sourceStatus !== targetStatus) {
+                // Get task position in the new column
+                const taskCards = this.querySelectorAll('.task-card');
+                const position = taskCards.length;
+
+                // Update task status via AJAX
+                updateTaskStatus(draggedTask.dataset.taskId, targetStatus, position);
+
+                // Move the task visually
+                this.appendChild(draggedTask);
+                draggedTask.dataset.status = targetStatus;
+
+                // Update styling for done tasks
+                if (targetStatus === 'done') {
+                    draggedTask.querySelector('h3').classList.add('line-through', 'text-gray-500');
+                    if (draggedTask.querySelector('p')) {
+                        draggedTask.querySelector('p').classList.add('line-through', 'text-gray-400');
+                    }
+                    draggedTask.classList.add('opacity-75');
+                } else {
+                    draggedTask.querySelector('h3').classList.remove('line-through', 'text-gray-500');
+                    if (draggedTask.querySelector('p')) {
+                        draggedTask.querySelector('p').classList.remove('line-through', 'text-gray-400');
+                    }
+                    draggedTask.classList.remove('opacity-75');
+                }
+            }
+
+            return false;
+        }
+
+        function updateTaskStatus(taskId, newStatus, position) {
+            const csrfToken = getCookie('csrftoken');
+
+            fetch('{% url "tasks:update_task_status" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    taskId: taskId,
+                    status: newStatus,
+                    position: position
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error:', data.error);
+                        // Revert the visual change if there was an error
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    location.reload();
+                });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}
